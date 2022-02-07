@@ -75,6 +75,7 @@ class OrmarCRUDRouter(CRUDGenerator[Model]):
             query = self.schema.objects.offset(cast(int, skip))
             if limit:
                 query = query.limit(limit)
+            query = query.select_all(follow=True)
             return await query.all()  # type: ignore
 
         return route
@@ -83,9 +84,10 @@ class OrmarCRUDRouter(CRUDGenerator[Model]):
         async def route(item_id: self._pk_type) -> Model:  # type: ignore
             try:
                 filter_ = {self._pk: item_id}
-                model = await self.schema.objects.filter(
-                    _exclude=False, **filter_
-                ).first()
+                query = self.schema.objects.filter(
+                    _exclude=False, **filter_)
+                query = query.select_all(follow=True)
+                model = await query.first()
             except NoMatch:
                 raise NOT_FOUND from None
             return model
